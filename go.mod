@@ -10,7 +10,5 @@ require gopkg.in/yaml.v2 v2.2.7
 
 require (
 	github.com/aws/aws-lambda-go v1.13.3
-	github.com/fnproject/fdk-go v0.0.1
-	github.com/tencentyun/scf-go-lib v0.0.0-20190817080819-4a2819cda320
 	golang.org/x/mod v0.1.0
 )
