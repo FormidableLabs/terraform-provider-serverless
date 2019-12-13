@@ -104,10 +104,7 @@ func testAccServerlessDeploymentConfig() string {
 	return `
 resource "serverless_deployment" "example" {
   config_dir         = abspath("../example")
-  serverless_bin_dir = abspath("../example/node_modules/.bin")
-  # Relative to config path
-  package_dir         = ".terraform-serverless"
-  stage               = "sandbox"
+  stage              = "sandbox"
 }`
 }
 

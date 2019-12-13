@@ -25,7 +25,7 @@ type serverlessConfig struct {
 }
 
 func getServerlessConfig(configDir string, serverlessBinDir string) ([]byte, error) {
-	cmd := exec.Command(getServerlessBin(serverlessBinDir), "print", "--format", "json")
+	cmd := exec.Command(getServerlessBin(configDir, serverlessBinDir), "print", "--format", "json")
 	cmd.Dir = configDir
 
 	output, err := cmd.CombinedOutput()
@@ -46,9 +46,14 @@ func getServiceName(configJson []byte) (string, error) {
 // Create a hash of the Serverless config and the Serverless zip archive.
 // Note that dirhash.HashZip ignores all zip metadata and correctly hashes
 // contents of the archive.
-func hashServerlessDir(configDir string, packagePath string, configJson []byte) (string, error) {
+func hashServerlessDir(
+	configDir string,
+	packagePath string,
+	serviceName string,
+	configJson []byte,
+) (string, error) {
 	absolutePackagePath := filepath.Join(configDir, packagePath)
-	zipPath := filepath.Join(absolutePackagePath, "sls-provider.zip")
+	zipPath := filepath.Join(absolutePackagePath, fmt.Sprintf("%s.zip", serviceName))
 
 	zipHash, err := dirhash.HashZip(zipPath, dirhash.Hash1)
 	if err != nil {
@@ -61,7 +66,10 @@ func hashServerlessDir(configDir string, packagePath string, configJson []byte) 
 	return strings.Join([]string{zipHash, configHash}, "-"), nil
 }
 
-func getServerlessBin(binPath string) string {
+func getServerlessBin(configDir string, binPath string) string {
+	if binPath == "" {
+		binPath = filepath.Join(configDir, "node_modules", ".bin")
+	}
 	suffix := ""
 	if runtime.GOOS == "windows" {
 		suffix = ".cmd"
@@ -99,7 +107,7 @@ func runServerless(params *serverlessParams) error {
 		stringArgs...,
 	)
 
-	cmd := exec.Command(getServerlessBin(params.serverlessBinDir), stringArgs...)
+	cmd := exec.Command(getServerlessBin(params.configDir, params.serverlessBinDir), stringArgs...)
 	cmd.Dir = params.configDir
 
 	output, err := cmd.CombinedOutput()
@@ -124,11 +132,21 @@ func resourceDeployment() *schema.Resource {
 			},
 			"serverless_bin_dir": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Default:  "",
 			},
+			// The directory where the Serverless package lives. In the CLI, this defaults to
+			// .serverless, but we default to .terraform-serverless to avoid an issue where
+			// the CLI deletes the .serverless directory after deploy, even with --package.
+			// Note that the provider requires out-of-band packaging. Users should package
+			// their code with `sls package --package .terraform-serverless`.
+			//
+			// NOTE: the path you provide must be RELATIVE to your `config_dir` since the
+			// --package flag in the CLI does not support absolute paths.
 			"package_dir": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
+				Default:  ".terraform-serverless",
 			},
 			"stage": &schema.Schema{
 				Type:     schema.TypeString,
@@ -162,7 +180,7 @@ func resourceDeployment() *schema.Resource {
 				return false
 			}
 
-			hash, err := hashServerlessDir(configDir, packageDir, configJson)
+			hash, err := hashServerlessDir(configDir, packageDir, d.Id(), configJson)
 			if err != nil {
 				return false
 			}
@@ -190,7 +208,7 @@ func resourceDeploymentCreate(d *schema.ResourceData, m interface{}) error {
 	}
 	d.SetId(id)
 
-	hash, err := hashServerlessDir(configDir, packageDir, configJson)
+	hash, err := hashServerlessDir(configDir, packageDir, id, configJson)
 	if err != nil {
 		return err
 	}
