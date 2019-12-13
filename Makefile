@@ -13,7 +13,7 @@ testacc:
 	TF_ACC=1 go test $(TEST_PACKAGES) -v $(TESTARGS) -timeout 120m -ldflags="-X=$(PKG_NAME)/$(PROVIDER_VERSION_PLACEHOLDER)=acc"
 
 fmt:
-	gofmt -w $(GOFMT_FILES)
+	gofmt -w $(GO_FILES)
 
 lint:
 	golangci-lint run .
