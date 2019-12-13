@@ -15,7 +15,7 @@ Thanks for contributing!
 We have an example Terraform config for the provider at `example-test.tf`. This config has access to the custom provider binary. To manually test provider changes with this config, run the following:
 
 ```sh
-aws-vault exec --no-session formidable # or your own account's profile
+aws-vault exec --no-session {ACCOUNT_NAME} # or your own account's profile
 go build -o terraform-provider-serverless
 terraform init
 terraform apply
@@ -24,7 +24,7 @@ exit
 # To see debug logs, run `TF_LOG=debug terraform apply` instead.
 ```
 
-## Debugging
+### Debugging
 
 Terraform infers log levels from string prefixes. To log values from the provider, you can use:
 
@@ -34,26 +34,34 @@ log.Println("[WARN]", value)
 
 You can then use `TF_LOG=warn` before `terraform apply` or `make testacc` to see your logs.
 
-## Linting
+### Linting
 
-We lint the the codebase with [`golangci-lint`](https://github.com/golangci/golangci-lint). To lint, run `golangci-lint run ./` in the root of the repo.
+We lint the the codebase with [`golangci-lint`](https://github.com/golangci/golangci-lint). To lint:
 
-## Testing
+```sh
+make lint
+```
+
+### Testing
 
 To run acceptance tests:
 
 ```sh
-aws-vault exec --no-session formidable # or your own account's profile
+aws-vault exec --no-session {ACCOUNT_NAME} # or your own account's profile
 make testacc
 exit
 ```
 
 ## Before submitting a PR...
 
-- run the acceptance tests! See the instructions above.
-- run `make fmt` to format your code! CI will catch this, but it'll save you a build!
+- Run lint and the acceptance tests listed above.
+- Run `make fmt` to format your code! CI will catch this, but it'll save you a build!
 
 ## Releases
 
-- Push a version tag to master after merging the PRs you want to release (e.g. `git tag -a "v1.2.3" -m "1.2.3" && git push --follow-tags).
-- [Goreleaser](https://goreleaser.com/) will build cross-platform binaries and place them in a GitHub release.
+1. Update `CHANGELOG.md`, following format for previous versions
+2. Commit as "Changes for version NUMBER"
+3. Tag a version in git master branch after merging the PRs you want to release. E.g. `git tag -a "v1.2.3" -m "1.2.3"`
+4. Run `git push && git push --tags`
+
+After a git tag is pushed, a Travis `deploy` step will use [Goreleaser](https://goreleaser.com/) to build cross-platform binaries and place them in a GitHub release automatically.

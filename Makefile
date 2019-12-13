@@ -15,5 +15,8 @@ testacc:
 fmt:
 	gofmt -w $(GOFMT_FILES)
 
-.PHONY: build testacc fmt
+lint:
+	golangci-lint run .
+
+.PHONY: build testacc fmt lint
 
