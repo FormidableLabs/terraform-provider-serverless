@@ -8,6 +8,7 @@ Thanks for contributing!
 - Access to the Formidable AWS account (or your own if you're an external contributor).
 - `aws-vault`. Follow [these instructions](https://github.com/99designs/aws-vault) to install and set up your profile.
 - Terraform and `tfenv`. `tfenv` conflicts with Homebrew `terraform`, so uninstall it before proceeding. In the root of the repo, run `brew install tfenv && tfenv install`. `tfenv` will download and install the Terraform version pinned in `.terraform-version`.
+- [`golangci-lint`](https://github.com/golangci/golangci-lint) for linting Go code. Install with `brew install golangci/tap/golangci-lint`.
 
 ## Development
 
@@ -32,6 +33,10 @@ log.Println("[WARN]", value)
 ```
 
 You can then use `TF_LOG=warn` before `terraform apply` or `make testacc` to see your logs.
+
+## Linting
+
+We lint the the codebase with [`golangci-lint`](https://github.com/golangci/golangci-lint). To lint, run `golangci-lint run ./` in the root of the repo.
 
 ## Testing
 
