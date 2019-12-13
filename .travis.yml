@@ -1,5 +1,7 @@
-# .travis.yml
 language: go
+
+go:
+  - 1.13.x
 
 # calls goreleaser
 deploy:
