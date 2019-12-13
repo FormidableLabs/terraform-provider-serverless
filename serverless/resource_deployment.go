@@ -1,11 +1,10 @@
 package serverless
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
-
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -16,9 +15,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
-
-	yaml "gopkg.in/yaml.v2"
-
 	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
@@ -27,20 +23,27 @@ type serverlessConfig struct {
 	Service string
 }
 
-func getServiceName(configPath string) (string, error) {
-	configBytes, err := ioutil.ReadFile(configPath)
+func getServerlessConfig(configDir string, serverlessBinPath string) ([]byte, error) {
+	cmd := exec.Command(serverlessBinPath, "print", "--format", "json")
+	cmd.Dir = configDir
+
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", err
+		return []byte{}, fmt.Errorf("%v\n%w", string(output), err)
 	}
 
+	return output, nil
+}
+
+func getServiceName(configJson []byte) (string, error) {
 	config := serverlessConfig{}
-	err = yaml.Unmarshal(configBytes, &config)
+	err := json.Unmarshal([]byte(configJson), &config)
 
 	return config.Service, err
 }
 
-func hashServerlessDir(configPath string, packagePath string) (string, error) {
-	absolutePackagePath := filepath.Join(filepath.Dir(configPath), packagePath)
+func hashServerlessDir(configDir string, packagePath string, configJson []byte) (string, error) {
+	absolutePackagePath := filepath.Join(configDir, packagePath)
 	zipPath := filepath.Join(absolutePackagePath, "sls-provider.zip")
 
 	zipHash, err := dirhash.HashZip(zipPath, dirhash.Hash1)
@@ -48,15 +51,8 @@ func hashServerlessDir(configPath string, packagePath string) (string, error) {
 		return "", err
 	}
 
-	// https://github.com/golang/mod/blob/master/sumdb/dirhash/hash.go#L75
-	osOpen := func(name string) (io.ReadCloser, error) {
-		return os.Open(name)
-	}
-
-	configHash, err := dirhash.Hash1([]string{configPath}, osOpen)
-	if err != nil {
-		return "", err
-	}
+	configHashBytes := sha256.Sum256([]byte(configJson))
+	configHash := hex.EncodeToString(configHashBytes[:])
 
 	return strings.Join([]string{zipHash, configHash}, "-"), nil
 }
@@ -64,7 +60,7 @@ func hashServerlessDir(configPath string, packagePath string) (string, error) {
 type serverlessParams struct {
 	command           string
 	serverlessBinPath string
-	configPath        string
+	configDir         string
 	packageDir        string
 	stage             string
 	args              []interface{}
@@ -91,7 +87,7 @@ func runServerless(params *serverlessParams) error {
 		stringArgs...,
 	)
 	cmd := exec.Command(params.serverlessBinPath, stringArgs...)
-	cmd.Dir = filepath.Dir(params.configPath)
+	cmd.Dir = params.configDir
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -109,7 +105,7 @@ func resourceDeployment() *schema.Resource {
 		Delete: resourceDeploymentDelete,
 
 		Schema: map[string]*schema.Schema{
-			"config_path": &schema.Schema{
+			"config_dir": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -140,11 +136,17 @@ func resourceDeployment() *schema.Resource {
 		},
 
 		CustomizeDiff: customdiff.ComputedIf("package_hash", func(d *schema.ResourceDiff, meta interface{}) bool {
-			configPath := d.Get("config_path").(string)
+			configDir := d.Get("config_dir").(string)
 			packageDir := d.Get("package_dir").(string)
+			serverlessBinPath := d.Get("serverless_bin_path").(string)
 			currentHash := d.Get("package_hash").(string)
 
-			hash, err := hashServerlessDir(configPath, packageDir)
+			configJson, err := getServerlessConfig(configDir, serverlessBinPath)
+			if err != nil {
+				return false
+			}
+
+			hash, err := hashServerlessDir(configDir, packageDir, configJson)
 			if err != nil {
 				return false
 			}
@@ -155,19 +157,24 @@ func resourceDeployment() *schema.Resource {
 }
 
 func resourceDeploymentCreate(d *schema.ResourceData, m interface{}) error {
-	configPath := d.Get("config_path").(string)
+	configDir := d.Get("config_dir").(string)
 	serverlessBinPath := d.Get("serverless_bin_path").(string)
 	packageDir := d.Get("package_dir").(string)
 	stage := d.Get("stage").(string)
 	args := d.Get("args").([]interface{})
 
-	id, err := getServiceName(configPath)
+	configJson, err := getServerlessConfig(configDir, serverlessBinPath)
+	if err != nil {
+		return err
+	}
+
+	id, err := getServiceName(configJson)
 	if err != nil {
 		return err
 	}
 	d.SetId(id)
 
-	hash, err := hashServerlessDir(configPath, packageDir)
+	hash, err := hashServerlessDir(configDir, packageDir, configJson)
 	if err != nil {
 		return err
 	}
@@ -179,7 +186,7 @@ func resourceDeploymentCreate(d *schema.ResourceData, m interface{}) error {
 	err = runServerless(&serverlessParams{
 		command:           "deploy",
 		serverlessBinPath: serverlessBinPath,
-		configPath:        configPath,
+		configDir:         configDir,
 		packageDir:        packageDir,
 		stage:             stage,
 		args:              args,
@@ -216,7 +223,7 @@ func resourceDeploymentRead(d *schema.ResourceData, m interface{}) error {
 
 func resourceDeploymentUpdate(d *schema.ResourceData, m interface{}) error {
 	shouldChange := d.HasChanges(
-		"config_path",
+		"config_dir",
 		"package_dir",
 		"stage",
 		"args",
@@ -232,7 +239,7 @@ func resourceDeploymentUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceDeploymentDelete(d *schema.ResourceData, m interface{}) error {
-	configPath := d.Get("config_path").(string)
+	configDir := d.Get("config_dir").(string)
 	serverlessBinPath := d.Get("serverless_bin_path").(string)
 	packageDir := d.Get("package_dir").(string)
 	stage := d.Get("stage").(string)
@@ -241,7 +248,7 @@ func resourceDeploymentDelete(d *schema.ResourceData, m interface{}) error {
 	err := runServerless(&serverlessParams{
 		command:           "remove",
 		serverlessBinPath: serverlessBinPath,
-		configPath:        configPath,
+		configDir:         configDir,
 		packageDir:        packageDir,
 		stage:             stage,
 		args:              args,

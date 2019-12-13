@@ -63,7 +63,7 @@ func testAccPreCheck(t *testing.T) {
 		t.Fatal(fmt.Errorf("%v\n%w", string(output), err))
 	}
 
-	configPath, err := filepath.Abs("../serverless.yml")
+	configDir, err := filepath.Abs("../")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +75,7 @@ func testAccPreCheck(t *testing.T) {
 
 	err = runServerless(&serverlessParams{
 		command:           "package",
-		configPath:        configPath,
+		configDir:         configDir,
 		serverlessBinPath: serverlessBinPath,
 		packageDir:        ".terraform-serverless",
 		stage:             "sandbox",
@@ -103,7 +103,7 @@ func testAccCheckServerlessDeploymentDestroy(s *terraform.State) error {
 func testAccServerlessDeploymentConfig() string {
 	return `
 resource "serverless_deployment" "example" {
-  config_path         = abspath("../serverless.yml")
+  config_dir         = abspath("../")
   serverless_bin_path = abspath("../node_modules/.bin/serverless")
   # Relative to config path
   package_dir         = ".terraform-serverless"
