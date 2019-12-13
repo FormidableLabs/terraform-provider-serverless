@@ -43,6 +43,9 @@ func getServiceName(configJson []byte) (string, error) {
 	return config.Service, err
 }
 
+// Create a hash of the Serverless config and the Serverless zip archive.
+// Note that dirhash.HashZip ignores all zip metadata and correctly hashes
+// contents of the archive.
 func hashServerlessDir(configDir string, packagePath string, configJson []byte) (string, error) {
 	absolutePackagePath := filepath.Join(configDir, packagePath)
 	zipPath := filepath.Join(absolutePackagePath, "sls-provider.zip")
@@ -145,6 +148,9 @@ func resourceDeployment() *schema.Resource {
 			},
 		},
 
+		// Only trigger a deploy if either the Serverless config or Serverless zip archive has changed.
+		// `sls package` isn't deterministic according to experiments, so in practive this means that
+		// we only deploy after the user has run `sls package` again.
 		CustomizeDiff: customdiff.ComputedIf("package_hash", func(d *schema.ResourceDiff, meta interface{}) bool {
 			configDir := d.Get("config_dir").(string)
 			packageDir := d.Get("package_dir").(string)
