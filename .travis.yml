@@ -12,7 +12,6 @@ install:
 script:
   - ./bin/golangci-lint run
 
-# calls goreleaser
 deploy:
   - provider: script
     skip_cleanup: true
