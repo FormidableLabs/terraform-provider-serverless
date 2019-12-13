@@ -50,5 +50,5 @@ exit
 
 ## Releases
 
-- Push a version tag (e.g. v1.2.3) to master after merging the PRs you want to release.
+- Push a version tag to master after merging the PRs you want to release (e.g. `git tag -a "v1.2.3" -m "1.2.3" && git push --follow-tags).
 - [Goreleaser](https://goreleaser.com/) will build cross-platform binaries and place them in a GitHub release.
