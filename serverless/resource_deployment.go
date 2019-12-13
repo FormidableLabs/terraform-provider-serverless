@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"golang.org/x/mod/sumdb/dirhash"
@@ -23,8 +24,8 @@ type serverlessConfig struct {
 	Service string
 }
 
-func getServerlessConfig(configDir string, serverlessBinPath string) ([]byte, error) {
-	cmd := exec.Command(serverlessBinPath, "print", "--format", "json")
+func getServerlessConfig(configDir string, serverlessBinDir string) ([]byte, error) {
+	cmd := exec.Command(getServerlessBin(serverlessBinDir), "print", "--format", "json")
 	cmd.Dir = configDir
 
 	output, err := cmd.CombinedOutput()
@@ -57,13 +58,21 @@ func hashServerlessDir(configDir string, packagePath string, configJson []byte) 
 	return strings.Join([]string{zipHash, configHash}, "-"), nil
 }
 
+func getServerlessBin(binPath string) string {
+	suffix := ""
+	if runtime.GOOS == "windows" {
+		suffix = ".cmd"
+	}
+	return filepath.Join(binPath, fmt.Sprintf("serverless%s", suffix))
+}
+
 type serverlessParams struct {
-	command           string
-	serverlessBinPath string
-	configDir         string
-	packageDir        string
-	stage             string
-	args              []interface{}
+	command          string
+	serverlessBinDir string
+	configDir        string
+	packageDir       string
+	stage            string
+	args             []interface{}
 }
 
 func runServerless(params *serverlessParams) error {
@@ -86,7 +95,8 @@ func runServerless(params *serverlessParams) error {
 		requiredArgs,
 		stringArgs...,
 	)
-	cmd := exec.Command(params.serverlessBinPath, stringArgs...)
+
+	cmd := exec.Command(getServerlessBin(params.serverlessBinDir), stringArgs...)
 	cmd.Dir = params.configDir
 
 	output, err := cmd.CombinedOutput()
@@ -109,7 +119,7 @@ func resourceDeployment() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"serverless_bin_path": &schema.Schema{
+			"serverless_bin_dir": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -138,10 +148,10 @@ func resourceDeployment() *schema.Resource {
 		CustomizeDiff: customdiff.ComputedIf("package_hash", func(d *schema.ResourceDiff, meta interface{}) bool {
 			configDir := d.Get("config_dir").(string)
 			packageDir := d.Get("package_dir").(string)
-			serverlessBinPath := d.Get("serverless_bin_path").(string)
+			serverlessBinDir := d.Get("serverless_bin_dir").(string)
 			currentHash := d.Get("package_hash").(string)
 
-			configJson, err := getServerlessConfig(configDir, serverlessBinPath)
+			configJson, err := getServerlessConfig(configDir, serverlessBinDir)
 			if err != nil {
 				return false
 			}
@@ -158,12 +168,12 @@ func resourceDeployment() *schema.Resource {
 
 func resourceDeploymentCreate(d *schema.ResourceData, m interface{}) error {
 	configDir := d.Get("config_dir").(string)
-	serverlessBinPath := d.Get("serverless_bin_path").(string)
+	serverlessBinDir := d.Get("serverless_bin_dir").(string)
 	packageDir := d.Get("package_dir").(string)
 	stage := d.Get("stage").(string)
 	args := d.Get("args").([]interface{})
 
-	configJson, err := getServerlessConfig(configDir, serverlessBinPath)
+	configJson, err := getServerlessConfig(configDir, serverlessBinDir)
 	if err != nil {
 		return err
 	}
@@ -184,12 +194,12 @@ func resourceDeploymentCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	err = runServerless(&serverlessParams{
-		command:           "deploy",
-		serverlessBinPath: serverlessBinPath,
-		configDir:         configDir,
-		packageDir:        packageDir,
-		stage:             stage,
-		args:              args,
+		command:          "deploy",
+		serverlessBinDir: serverlessBinDir,
+		configDir:        configDir,
+		packageDir:       packageDir,
+		stage:            stage,
+		args:             args,
 	})
 
 	if err != nil {
@@ -227,7 +237,7 @@ func resourceDeploymentUpdate(d *schema.ResourceData, m interface{}) error {
 		"package_dir",
 		"stage",
 		"args",
-		"serverless_bin_path",
+		"serverless_bin_dir",
 		"package_hash",
 	)
 
@@ -240,18 +250,18 @@ func resourceDeploymentUpdate(d *schema.ResourceData, m interface{}) error {
 
 func resourceDeploymentDelete(d *schema.ResourceData, m interface{}) error {
 	configDir := d.Get("config_dir").(string)
-	serverlessBinPath := d.Get("serverless_bin_path").(string)
+	serverlessBinDir := d.Get("serverless_bin_dir").(string)
 	packageDir := d.Get("package_dir").(string)
 	stage := d.Get("stage").(string)
 	args := d.Get("args").([]interface{})
 
 	err := runServerless(&serverlessParams{
-		command:           "remove",
-		serverlessBinPath: serverlessBinPath,
-		configDir:         configDir,
-		packageDir:        packageDir,
-		stage:             stage,
-		args:              args,
+		command:          "remove",
+		serverlessBinDir: serverlessBinDir,
+		configDir:        configDir,
+		packageDir:       packageDir,
+		stage:            stage,
+		args:             args,
 	})
 	if err != nil {
 		return err

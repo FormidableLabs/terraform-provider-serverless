@@ -3,5 +3,5 @@ resource "serverless_deployment" "example" {
   # Relative to config path
   package_dir         = ".terraform-serverless"
   stage               = "sandbox"
-  serverless_bin_path = abspath("node_modules/.bin/serverless")
+  serverless_bin_dir = abspath("node_modules/.bin")
 }

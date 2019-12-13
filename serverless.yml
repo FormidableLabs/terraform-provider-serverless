@@ -13,18 +13,13 @@ package:
     - "package.json"
     # Source directories
     - "!aws/**"
-    - "!terraform"
     - "!terraform/**"
-    - "!.terraform-serverless"
     - "!.terraform-serverless/**"
-    - "!**/.terraform"
     - "!**/.terraform/**"
     # General exclusions
     - "!**/.DS_Store"
     # Dependencies
-    - "!node_modules/aws-sdk"
     - "!node_modules/aws-sdk/**"
-    - "!**/node_modules/aws-sdk"
     - "!**/node_modules/aws-sdk/**"
     - "!**/node_modules/*/CHANGELOG.md"
     - "!**/node_modules/*/HISTORY.md"
