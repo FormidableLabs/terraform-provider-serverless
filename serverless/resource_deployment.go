@@ -52,7 +52,7 @@ func hashServerlessDir(configDir string, packagePath string, configJson []byte) 
 		return "", err
 	}
 
-	configHashBytes := sha256.Sum256([]byte(configJson))
+	configHashBytes := sha256.Sum256(configJson)
 	configHash := hex.EncodeToString(configHashBytes[:])
 
 	return strings.Join([]string{zipHash, configHash}, "-"), nil
