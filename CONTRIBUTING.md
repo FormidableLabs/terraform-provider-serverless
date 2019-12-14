@@ -27,7 +27,7 @@ $ AWS_REGION={SET_A_REGION} aws-vault exec --no-session {ACCOUNT_NAME}
 [aws-vault] $ terraform apply
 
 # Verify running serverless / lambda app and get endpoint URL
-[aws-vault] $ ( cd example && AWS_REGION={SET_A_REGION} serverless info -s sandbox )
+[aws-vault] $ ( cd example && serverless info -s sandbox )
 Service Information
 ...
 endpoints:
@@ -43,7 +43,7 @@ endpoints:
 [aws-vault] $ terraform destroy
 
 # Verify serverless app is gone
-[aws-vault] $ ( cd example && AWS_REGION={SET_A_REGION} serverless info -s sandbox )
+[aws-vault] $ ( cd example && serverless info -s sandbox )
 
   Serverless Error ---------------------------------------
 
