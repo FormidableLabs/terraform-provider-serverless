@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "name": "terraform-provider-serverless",
+  "version": "0.1.0",
+  "main": "index.js",
+  "author": "Tyler Thompson <tyler.thompson@formidable.com>",
+  "license": "MIT",
+  "dependencies": {
+    "serverless": "^1.59.3"
+  }
+}
