@@ -7,7 +7,7 @@ env:
   - GO111MODULE=on
 
 install:
-  - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.21.0 -b ../tools
+  - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ../tools v1.21.0
 
 script:
   - ../tools/golangci-lint run
