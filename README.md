@@ -1,5 +1,6 @@
 Terraform Provider for Serverless
 =================================
+[![Build Status](https://travis-ci.com/FormidableLabs/terraform-provider-serverless.svg?branch=master)](https://travis-ci.com/FormidableLabs/terraform-provider-serverless)
 
 Integrate Serverless into your Terraform dependency graph!
 
