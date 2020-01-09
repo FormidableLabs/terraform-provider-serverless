@@ -20,6 +20,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
+// Code Review Comments
+// - servlessConfig struct + getServiceName seem somewhat redundant/useless
+// - we're type casting the same data in multiple places, might be worth investigating
+//   if we can capture this in a helper function or struct + method
+//   idea: type getter interface + struct for serverless config/data
+// - mixing passing strings + []byte, might want to be consistent
+// -
+
+// Questions
+// - Follow up on `hashServerlessDir` in the case when multiple things need hashed
+// -
+//
+
 type serverlessConfig struct {
 	Service string
 }
@@ -36,6 +49,9 @@ func getServerlessConfig(configDir string, serverlessBinDir string) ([]byte, err
 	return output, nil
 }
 
+// Code Review Comment
+// What all does configJson hold in it? Is it just a JSON block with a 'service' key?
+// This function seems a little bit useless or redundant
 func getServiceName(configJson []byte) (string, error) {
 	config := serverlessConfig{}
 	err := json.Unmarshal([]byte(configJson), &config)
