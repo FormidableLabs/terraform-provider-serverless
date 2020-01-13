@@ -16,7 +16,7 @@ func resourceServerless() *schema.Resource {
 		Create: resourceServerlessCreate,
 		Read:   resourceServerlessRead,
 		Update: resourceServerlessUpdate,
-		// Delete: resourceDeploymentDelete,
+		Delete: resourceServerlessDelete,
 
 		Schema: map[string]*schema.Schema{
 			"config_dir": &schema.Schema{
@@ -139,4 +139,20 @@ func resourceServerlessUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	return resourceServerlessRead(d, m)
+}
+
+func resourceServerlessDelete(d *schema.ResourceData, m interface{}) error {
+	serverless, err := newServerless(d)
+
+	if err != nil {
+		return err
+	}
+
+	if err := serverless.run("remove"); err != nil {
+		return err
+	}
+
+	d.SetId("")
+
+	return nil
 }
