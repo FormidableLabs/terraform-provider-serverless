@@ -57,25 +57,19 @@ func resourceServerless() *schema.Resource {
 		// `sls package` isn't deterministic according to experiments, so in practive this means that
 		// we only deploy after the user has run `sls package` again.
 		CustomizeDiff: customdiff.ComputedIf("package_hash", func(d *schema.ResourceDiff, meta interface{}) bool {
-			// configDir := d.Get("config_dir").(string)
-			// packageDir := d.Get("package_dir").(string)
-			// serverlessBinDir := d.Get("serverless_bin_dir").(string)
-			// currentHash := d.Get("package_hash").(string)
-			serverless := newServerless(d)
+			serverless, err := newServerless(d)
 
-			// configJson, err := getServerlessConfig(configDir, serverlessBinDir)
-			// if err != nil {
-			// 	return false
-			// }
+			if err != nil {
+				return false
+			}
 
-			// hash, err := hashServerlessDir(configDir, packageDir, d.Id(), configJson)
-			// if err != nil {
-			// 	return false
-			// }
+			changed, err := serverless.rehash()
 
-			return false
+			if err != nil {
+				return false
+			}
 
-			// return hash != currentHash
+			return changed
 		}),
 	}
 }

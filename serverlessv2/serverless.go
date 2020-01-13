@@ -1,11 +1,15 @@
 package serverlessv2
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+
+	"golang.org/x/mod/sumdb/dirhash"
 )
 
 // Code Review Comments
@@ -30,10 +34,10 @@ type getter interface {
 // TODO investigate if we can remove some of these fields if they're only being used
 // to construct other values in one place (move that logic to the constructor)
 type serverless struct {
-	binDir    string
-	binPath   string
-	configDir string
-	// config     map[string]interface{}
+	binDir     string
+	binPath    string
+	configDir  string
+	config     map[string]interface{}
 	packageDir string
 	stage      string
 	hash       string
@@ -64,7 +68,7 @@ func (s serverless) run(command string) error {
 	return nil
 }
 
-func (s serverless) getServerlessConfig() (map[string]interface{}, error) {
+func (s *serverless) loadServerlessConfig() error {
 	config := make(map[string]interface{})
 
 	cmd := exec.Command(s.binPath, "print", "--format", "json")
@@ -73,22 +77,49 @@ func (s serverless) getServerlessConfig() (map[string]interface{}, error) {
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
-		return nil, fmt.Errorf("%v\n%w", string(output), err)
+		fmt.Errorf("%v\n%w", string(output), err)
 	}
 
 	if err = json.Unmarshal(output, &config); err != nil {
-		return nil, err
+		return err
 	}
 
-	return config, nil
+	s.config = config
+
+	return nil
 }
 
-func (s *serverless) rehash() (hash string, changed bool, err error) {
+func (s *serverless) rehash() (changed bool, err error) {
+	serviceName := s.config["service"].(string) // TODO: possibly check 2nd return for existence + handle err
+	zipPath := filepath.Join(s.configDir, s.packageDir, fmt.Sprintf("%s.zip", serviceName))
 
-	return "", false, nil
+	configJSON, err := json.Marshal(s.config)
+
+	if err != nil {
+		return changed, err
+	}
+
+	zipHash, err := dirhash.HashZip(zipPath, dirhash.Hash1)
+
+	if err != nil {
+		return changed, err
+	}
+
+	configHashBytes := sha256.Sum256(configJSON)
+	configHash := hex.EncodeToString(configHashBytes[:])
+
+	hash := fmt.Sprintf("%s-%s", zipHash, configHash)
+
+	if hash != s.hash {
+		changed = true
+	}
+
+	s.hash = hash
+
+	return changed, nil
 }
 
-func newServerless(resource getter) serverless {
+func newServerless(resource getter) (*serverless, error) {
 	resourceArgs := resource.Get("args").([]interface{})
 	args := make([]string, len(resourceArgs))
 
@@ -99,7 +130,7 @@ func newServerless(resource getter) serverless {
 	binDir := resource.Get("serverless_bin_dir").(string)
 	configDir := resource.Get("config_dir").(string)
 
-	return serverless{
+	s := &serverless{
 		binDir:     binDir,
 		binPath:    buildBinPath(configDir, binDir),
 		configDir:  configDir,
@@ -108,6 +139,16 @@ func newServerless(resource getter) serverless {
 		hash:       resource.Get("package_hash").(string),
 		args:       args,
 	}
+
+	if err := s.loadServerlessConfig(); err != nil {
+		return nil, err
+	}
+
+	if _, err := s.rehash(); err != nil {
+		return nil, err
+	}
+
+	return s, nil
 }
 
 func buildBinPath(configDir, binDir string) string {
