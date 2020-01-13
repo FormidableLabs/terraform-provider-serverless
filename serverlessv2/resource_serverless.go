@@ -1,6 +1,12 @@
 package serverlessv2
 
 import (
+	"strings"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
@@ -8,7 +14,7 @@ import (
 func resourceServerless() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceServerlessCreate,
-		// Read:   resourceDeploymentRead,
+		Read:   resourceServerlessRead,
 		// Update: resourceDeploymentUpdate,
 		// Delete: resourceDeploymentDelete,
 
@@ -96,4 +102,24 @@ func resourceServerlessCreate(d *schema.ResourceData, m interface{}) error {
 	return resourceServerlessRead(d, m)
 }
 
-func resourceServerlessRead(d *schema.ResourceData, m interface{}) error { return nil }
+func resourceServerlessRead(d *schema.ResourceData, m interface{}) error {
+	id := d.Id()
+	stage := d.Get("stage").(string)
+
+	sess := session.Must(session.NewSession())
+	cf := cloudformation.New(sess)
+	_, err := cf.DescribeStacks(&cloudformation.DescribeStacksInput{
+		StackName: aws.String(strings.Join([]string{id, stage}, "-")),
+	})
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			if aerr.Code() == "ValidationError" && strings.Contains(aerr.Message(), "does not exist") {
+				d.SetId("")
+				return nil
+			}
+		}
+		return err
+	}
+
+	return nil
+}
