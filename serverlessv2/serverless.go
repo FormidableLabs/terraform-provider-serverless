@@ -1,6 +1,7 @@
 package serverlessv2
 
 import (
+	"encoding/json"
 	"fmt"
 	"os/exec"
 	"path/filepath"
@@ -29,9 +30,10 @@ type getter interface {
 // TODO investigate if we can remove some of these fields if they're only being used
 // to construct other values in one place (move that logic to the constructor)
 type serverless struct {
-	binDir     string
-	binPath    string
-	configDir  string
+	binDir    string
+	binPath   string
+	configDir string
+	// config     map[string]interface{}
 	packageDir string
 	stage      string
 	hash       string
@@ -62,6 +64,30 @@ func (s serverless) run(command string) error {
 	return nil
 }
 
+func (s serverless) getServerlessConfig() (map[string]interface{}, error) {
+	config := make(map[string]interface{})
+
+	cmd := exec.Command(s.binPath, "print", "--format", "json")
+	cmd.Dir = s.configDir
+
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		return nil, fmt.Errorf("%v\n%w", string(output), err)
+	}
+
+	if err = json.Unmarshal(output, &config); err != nil {
+		return nil, err
+	}
+
+	return config, nil
+}
+
+func (s *serverless) rehash() (hash string, changed bool, err error) {
+
+	return "", false, nil
+}
+
 func newServerless(resource getter) serverless {
 	resourceArgs := resource.Get("args").([]interface{})
 	args := make([]string, len(resourceArgs))
@@ -70,11 +96,23 @@ func newServerless(resource getter) serverless {
 		args = append(args, arg.(string))
 	}
 
-	var binPath string
-	var suffix string
-
 	binDir := resource.Get("serverless_bin_dir").(string)
 	configDir := resource.Get("config_dir").(string)
+
+	return serverless{
+		binDir:     binDir,
+		binPath:    buildBinPath(configDir, binDir),
+		configDir:  configDir,
+		packageDir: resource.Get("package_dir").(string),
+		stage:      resource.Get("stage").(string),
+		hash:       resource.Get("package_hash").(string),
+		args:       args,
+	}
+}
+
+func buildBinPath(configDir, binDir string) string {
+	var binPath string
+	var suffix string
 
 	if binDir == "" {
 		binPath = filepath.Join(configDir, "node_modules", ".bin")
@@ -88,13 +126,5 @@ func newServerless(resource getter) serverless {
 
 	binPath = filepath.Join(binPath, fmt.Sprintf("serverless%s", suffix))
 
-	return serverless{
-		binDir:     binDir,
-		binPath:    binPath,
-		configDir:  configDir,
-		packageDir: resource.Get("package_dir").(string),
-		stage:      resource.Get("stage").(string),
-		hash:       resource.Get("package_hash").(string),
-		args:       args,
-	}
+	return binPath
 }
