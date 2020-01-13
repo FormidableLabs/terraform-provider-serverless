@@ -77,7 +77,7 @@ func (s *serverless) loadServerlessConfig() error {
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
-		fmt.Errorf("%v\n%w", string(output), err)
+		return fmt.Errorf("%v\n%w", string(output), err)
 	}
 
 	if err = json.Unmarshal(output, &config); err != nil {
