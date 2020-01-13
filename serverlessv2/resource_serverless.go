@@ -15,7 +15,7 @@ func resourceServerless() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceServerlessCreate,
 		Read:   resourceServerlessRead,
-		// Update: resourceDeploymentUpdate,
+		Update: resourceServerlessUpdate,
 		// Delete: resourceDeploymentDelete,
 
 		Schema: map[string]*schema.Schema{
@@ -122,4 +122,21 @@ func resourceServerlessRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	return nil
+}
+
+func resourceServerlessUpdate(d *schema.ResourceData, m interface{}) error {
+	shouldChange := d.HasChanges(
+		"config_dir",
+		"package_dir",
+		"stage",
+		"args",
+		"serverless_bin_dir",
+		"package_hash",
+	)
+
+	if shouldChange {
+		return resourceServerlessCreate(d, m)
+	}
+
+	return resourceServerlessRead(d, m)
 }
