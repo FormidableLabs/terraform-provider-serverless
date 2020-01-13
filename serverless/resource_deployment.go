@@ -26,11 +26,13 @@ import (
 //   if we can capture this in a helper function or struct + method
 //   idea: type getter interface + struct for serverless config/data
 // - mixing passing strings + []byte, might want to be consistent
-// -
+// - do we want out resource name to be 'deployment' vs 'serverless' or 'serverless_deployment'
+//   see https://www.terraform.io/docs/extend/best-practices/naming.html
+// - investigate utilizing io.Reader + io.Writer interfaces
 
 // Questions
 // - Follow up on `hashServerlessDir` in the case when multiple things need hashed
-// -
+//
 //
 
 type serverlessConfig struct {
