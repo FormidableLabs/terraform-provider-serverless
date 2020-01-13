@@ -7,7 +7,7 @@ import (
 
 func resourceServerless() *schema.Resource {
 	return &schema.Resource{
-		// Create: resourceDeploymentCreate,
+		Create: resourceServerlessCreate,
 		// Read:   resourceDeploymentRead,
 		// Update: resourceDeploymentUpdate,
 		// Delete: resourceDeploymentDelete,
@@ -73,3 +73,27 @@ func resourceServerless() *schema.Resource {
 		}),
 	}
 }
+
+func resourceServerlessCreate(d *schema.ResourceData, m interface{}) error {
+	serverless, err := newServerless(d)
+
+	if err != nil {
+		return err
+	}
+
+	serviceName := serverless.config["service"].(string) // TODO: possibly check 2nd return for existence + handle err
+
+	d.SetId(serviceName)
+
+	if err := d.Set("package_hash", serverless.hash); err != nil {
+		return err
+	}
+
+	if err := serverless.run("deploy"); err != nil {
+		return err
+	}
+
+	return resourceServerlessRead(d, m)
+}
+
+func resourceServerlessRead(d *schema.ResourceData, m interface{}) error { return nil }
