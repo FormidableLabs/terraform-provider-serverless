@@ -1,4 +1,4 @@
-package serverlessv2
+package serverless
 
 import (
 	"crypto/sha256"

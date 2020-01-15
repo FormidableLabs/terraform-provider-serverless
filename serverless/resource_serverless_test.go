@@ -73,13 +73,16 @@ func testAccPreCheck(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = runServerless(&serverlessParams{
-		command:          "package",
-		configDir:        configDir,
-		serverlessBinDir: serverlessBinDir,
-		packageDir:       ".terraform-serverless",
-		stage:            "sandbox",
-	})
+	s := &serverless{
+		configDir:  configDir,
+		binDir:     serverlessBinDir,
+		binPath:    buildBinPath(configDir, serverlessBinDir),
+		packageDir: ".terraform-serverless",
+		stage:      "sandbox",
+	}
+
+	err = s.run("package")
+
 	if err != nil {
 		t.Fatal(err)
 	}
