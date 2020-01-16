@@ -60,7 +60,7 @@ func resourceDeployment() *schema.Resource {
 		},
 
 		// Only trigger a deploy if either the Serverless config or Serverless zip archive has changed.
-		// `sls package` isn't deterministic according to experiments, so in practive this means that
+		// `sls package` isn't deterministic according to experiments, so in practice this means that
 		// we only deploy after the user has run `sls package` again.
 		CustomizeDiff: customdiff.ComputedIf("package_hash", func(d *schema.ResourceDiff, meta interface{}) bool {
 			serverless, err := newServerless(d)
