@@ -8,7 +8,7 @@ import (
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		ResourcesMap: map[string]*schema.Resource{
-			"serverless_deployment": resourceServerless(),
+			"serverless_deployment": resourceDeployment(),
 		},
 	}
 }

@@ -11,12 +11,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-func resourceServerless() *schema.Resource {
+func resourceDeployment() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceServerlessCreate,
-		Read:   resourceServerlessRead,
-		Update: resourceServerlessUpdate,
-		Delete: resourceServerlessDelete,
+		Create: resourceDeploymentCreate,
+		Read:   resourceDeploymentRead,
+		Update: resourceDeploymentUpdate,
+		Delete: resourceDeploymentDelete,
 
 		Schema: map[string]*schema.Schema{
 			"config_dir": &schema.Schema{
@@ -80,7 +80,7 @@ func resourceServerless() *schema.Resource {
 	}
 }
 
-func resourceServerlessCreate(d *schema.ResourceData, m interface{}) error {
+func resourceDeploymentCreate(d *schema.ResourceData, m interface{}) error {
 	serverless, err := newServerless(d)
 
 	if err != nil {
@@ -99,10 +99,10 @@ func resourceServerlessCreate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	return resourceServerlessRead(d, m)
+	return resourceDeploymentRead(d, m)
 }
 
-func resourceServerlessRead(d *schema.ResourceData, m interface{}) error {
+func resourceDeploymentRead(d *schema.ResourceData, m interface{}) error {
 	id := d.Id()
 	stage := d.Get("stage").(string)
 
@@ -124,7 +124,7 @@ func resourceServerlessRead(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func resourceServerlessUpdate(d *schema.ResourceData, m interface{}) error {
+func resourceDeploymentUpdate(d *schema.ResourceData, m interface{}) error {
 	shouldChange := d.HasChanges(
 		"config_dir",
 		"package_dir",
@@ -135,13 +135,13 @@ func resourceServerlessUpdate(d *schema.ResourceData, m interface{}) error {
 	)
 
 	if shouldChange {
-		return resourceServerlessCreate(d, m)
+		return resourceDeploymentCreate(d, m)
 	}
 
-	return resourceServerlessRead(d, m)
+	return resourceDeploymentRead(d, m)
 }
 
-func resourceServerlessDelete(d *schema.ResourceData, m interface{}) error {
+func resourceDeploymentDelete(d *schema.ResourceData, m interface{}) error {
 	serverless, err := newServerless(d)
 
 	if err != nil {
