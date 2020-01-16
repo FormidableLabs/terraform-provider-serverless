@@ -1,6 +1,7 @@
 package serverless
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -87,7 +88,11 @@ func resourceDeploymentCreate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	serviceName := serverless.config["service"].(string) // TODO: possibly check 2nd return for existence + handle err
+	serviceName, ok := serverless.config["service"].(string)
+
+	if !ok {
+		return errors.New("service name was not found in serverless config")
+	}
 
 	d.SetId(serviceName)
 

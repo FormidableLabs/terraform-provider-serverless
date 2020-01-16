@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os/exec"
 	"path/filepath"
@@ -104,7 +105,12 @@ func (s *Serverless) loadServerlessConfig() error {
 }
 
 func (s *Serverless) Hash() (changed bool, err error) {
-	serviceName := s.config["service"].(string) // TODO: possibly check 2nd return for existence + handle err
+	serviceName, ok := s.config["service"].(string)
+
+	if !ok {
+		return false, errors.New("service name was not found in serverless config")
+	}
+
 	zipPath := filepath.Join(s.configDir, s.packageDir, fmt.Sprintf("%s.zip", serviceName))
 
 	configJSON, err := json.Marshal(s.config)
