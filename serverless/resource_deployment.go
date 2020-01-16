@@ -63,13 +63,13 @@ func resourceDeployment() *schema.Resource {
 		// `sls package` isn't deterministic according to experiments, so in practice this means that
 		// we only deploy after the user has run `sls package` again.
 		CustomizeDiff: customdiff.ComputedIf("package_hash", func(d *schema.ResourceDiff, meta interface{}) bool {
-			serverless, err := newServerless(d)
+			serverless, err := NewServerless(d)
 
 			if err != nil {
 				return false
 			}
 
-			changed, err := serverless.rehash()
+			changed, err := serverless.Hash()
 
 			if err != nil {
 				return false
@@ -81,7 +81,7 @@ func resourceDeployment() *schema.Resource {
 }
 
 func resourceDeploymentCreate(d *schema.ResourceData, m interface{}) error {
-	serverless, err := newServerless(d)
+	serverless, err := NewServerless(d)
 
 	if err != nil {
 		return err
@@ -95,7 +95,7 @@ func resourceDeploymentCreate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	if err := serverless.run("deploy"); err != nil {
+	if err := serverless.Deploy(); err != nil {
 		return err
 	}
 
@@ -142,13 +142,13 @@ func resourceDeploymentUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceDeploymentDelete(d *schema.ResourceData, m interface{}) error {
-	serverless, err := newServerless(d)
+	serverless, err := NewServerless(d)
 
 	if err != nil {
 		return err
 	}
 
-	if err := serverless.run("remove"); err != nil {
+	if err := serverless.Remove(); err != nil {
 		return err
 	}
 

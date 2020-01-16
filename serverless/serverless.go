@@ -12,11 +12,18 @@ import (
 	"golang.org/x/mod/sumdb/dirhash"
 )
 
+const (
+	deploy = iota
+	pkg    = iota
+	build  = iota
+	remove = iota
+)
+
 type getter interface {
 	Get(key string) interface{}
 }
 
-type serverless struct {
+type Serverless struct {
 	binDir     string
 	binPath    string
 	configDir  string
@@ -27,13 +34,37 @@ type serverless struct {
 	args       []string
 }
 
-func (s serverless) run(command string) error {
+func (s Serverless) Deploy() error {
+	if err := s.exec(deploy); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s Serverless) Package() error {
+	if err := s.exec(pkg); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s Serverless) Remove() error {
+	if err := s.exec(remove); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s Serverless) exec(command int) error {
 	args := []string{
-		command, "-s",
+		getCmdString(command), "-s",
 		s.stage,
 	}
 
-	if command == "deploy" || command == "package" {
+	if command == deploy || command == pkg {
 		args = append(args, "-p", s.packageDir)
 	}
 
@@ -51,7 +82,7 @@ func (s serverless) run(command string) error {
 	return nil
 }
 
-func (s *serverless) loadServerlessConfig() error {
+func (s *Serverless) loadServerlessConfig() error {
 	config := make(map[string]interface{})
 
 	cmd := exec.Command(s.binPath, "print", "--format", "json")
@@ -72,7 +103,7 @@ func (s *serverless) loadServerlessConfig() error {
 	return nil
 }
 
-func (s *serverless) rehash() (changed bool, err error) {
+func (s *Serverless) Hash() (changed bool, err error) {
 	serviceName := s.config["service"].(string) // TODO: possibly check 2nd return for existence + handle err
 	zipPath := filepath.Join(s.configDir, s.packageDir, fmt.Sprintf("%s.zip", serviceName))
 
@@ -102,7 +133,7 @@ func (s *serverless) rehash() (changed bool, err error) {
 	return changed, nil
 }
 
-func newServerless(resource getter) (*serverless, error) {
+func NewServerless(resource getter) (*Serverless, error) {
 	resourceArgs := resource.Get("args").([]interface{})
 	args := make([]string, len(resourceArgs))
 
@@ -113,7 +144,7 @@ func newServerless(resource getter) (*serverless, error) {
 	binDir := resource.Get("serverless_bin_dir").(string)
 	configDir := resource.Get("config_dir").(string)
 
-	s := &serverless{
+	s := &Serverless{
 		binDir:     binDir,
 		binPath:    buildBinPath(configDir, binDir),
 		configDir:  configDir,
@@ -127,7 +158,7 @@ func newServerless(resource getter) (*serverless, error) {
 		return nil, err
 	}
 
-	if _, err := s.rehash(); err != nil {
+	if _, err := s.Hash(); err != nil {
 		return nil, err
 	}
 
@@ -151,4 +182,19 @@ func buildBinPath(configDir, binDir string) string {
 	binPath = filepath.Join(binPath, fmt.Sprintf("serverless%s", suffix))
 
 	return binPath
+}
+
+func getCmdString(cmd int) string {
+	switch cmd {
+	case deploy:
+		return "deploy"
+	case pkg:
+		return "package"
+	case build:
+		return "build"
+	case remove:
+		return "remove"
+	default:
+		return ""
+	}
 }

@@ -73,7 +73,7 @@ func testAccPreCheck(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s := &serverless{
+	s := &Serverless{
 		configDir:  configDir,
 		binDir:     serverlessBinDir,
 		binPath:    buildBinPath(configDir, serverlessBinDir),
@@ -81,7 +81,7 @@ func testAccPreCheck(t *testing.T) {
 		stage:      "sandbox",
 	}
 
-	err = s.run("package")
+	err = s.Package()
 
 	if err != nil {
 		t.Fatal(err)
