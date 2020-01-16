@@ -14,9 +14,9 @@ import (
 
 const (
 	deploy = iota
-	pkg    = iota
-	build  = iota
-	remove = iota
+	pkg
+	build
+	remove
 )
 
 type getter interface {
