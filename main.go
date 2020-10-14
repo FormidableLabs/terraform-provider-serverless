@@ -4,7 +4,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/plugin"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 
-	"github.com/FormidableLabs/terraform-provider-serverless/serverless"
+	"github.com/labd/terraform-provider-serverless/serverless"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module github.com/FormidableLabs/terraform-provider-serverless
+module github.com/labd/terraform-provider-serverless
 
 go 1.13
 
