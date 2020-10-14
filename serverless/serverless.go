@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -29,6 +30,7 @@ type Serverless struct {
 	binPath    string
 	configDir  string
 	config     map[string]interface{}
+	env        []string
 	packageDir string
 	stage      string
 	hash       string
@@ -73,6 +75,7 @@ func (s Serverless) exec(command int) error {
 
 	cmd := exec.Command(s.binPath, args...)
 	cmd.Dir = s.configDir
+	cmd.Env = s.env
 
 	output, err := cmd.CombinedOutput()
 
@@ -88,6 +91,7 @@ func (s *Serverless) loadServerlessConfig() error {
 
 	cmd := exec.Command(s.binPath, "print", "--format", "json")
 	cmd.Dir = s.configDir
+	cmd.Env = s.env
 
 	output, err := cmd.CombinedOutput()
 
@@ -130,9 +134,9 @@ func (s *Serverless) Hash() (changed bool, err error) {
 		zipPath := filepath.Join(s.configDir, s.packageDir, fmt.Sprintf("%s.zip", serviceName))
 		zipHash, err = dirhash.HashZip(zipPath, dirhash.Hash1)
 
-	if err != nil {
-		return changed, err
-	}
+		if err != nil {
+			return changed, err
+		}
 	}
 
 	hash := fmt.Sprintf("%s-%s", zipHash, configHash)
@@ -157,11 +161,18 @@ func NewServerless(resource getter) (*Serverless, error) {
 	binDir := resource.Get("serverless_bin_dir").(string)
 	configDir := resource.Get("config_dir").(string)
 
+	envMap := resource.Get("env").(map[string]interface{})
+	env := os.Environ()
+	for k, v := range envMap {
+		env = append(env, fmt.Sprintf("%s=%s", k, v))
+	}
+
 	s := &Serverless{
 		binDir:     binDir,
 		binPath:    buildBinPath(configDir, binDir),
 		configDir:  configDir,
 		packageDir: resource.Get("package_dir").(string),
+		env:        env,
 		stage:      resource.Get("stage").(string),
 		hash:       resource.Get("package_hash").(string),
 		args:       args,
@@ -180,7 +191,7 @@ func NewServerless(resource getter) (*Serverless, error) {
 
 func buildBinPath(configDir, binDir string) string {
 	var suffix string
-	
+
 	if runtime.GOOS == "windows" {
 		suffix = ".cmd"
 	}

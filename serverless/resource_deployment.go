@@ -55,6 +55,13 @@ func resourceDeployment() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"env": &schema.Schema{
+				Type: schema.TypeMap,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Optional: true,
+			},
 			"package_hash": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -137,6 +144,7 @@ func resourceDeploymentUpdate(d *schema.ResourceData, m interface{}) error {
 		"package_dir",
 		"stage",
 		"args",
+		"env",
 		"serverless_bin_dir",
 		"package_hash",
 	)
