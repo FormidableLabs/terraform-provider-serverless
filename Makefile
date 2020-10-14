@@ -6,12 +6,8 @@ LATEST_COMMIT=$(shell git describe --tags --always)
 
 default: build
 
-# build:
-# 	go install -ldflags="-X $(PKG_NAME)/$(PROVIDER_VERSION_PLACEHOLDER)=$(LATEST_COMMIT)"
-
 build:
-	go build -o terraform-provider-serverless
-	cp terraform-provider-serverless ~/.terraform.d/plugins/registry.terraform.io/labd/serverless/0.2.0/darwin_amd64/.
+	go install -ldflags="-X $(PKG_NAME)/$(PROVIDER_VERSION_PLACEHOLDER)=$(LATEST_COMMIT)"
 
 testacc:
 	TF_ACC=1 go test $(TEST_PACKAGES) -v $(TESTARGS) -timeout 120m -ldflags="-X=$(PKG_NAME)/$(PROVIDER_VERSION_PLACEHOLDER)=acc"
