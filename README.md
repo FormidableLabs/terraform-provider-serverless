@@ -34,7 +34,7 @@ resource "serverless_deployment" "example" {
   # **NOTE:** must be relative to `config_dir`!
   package_dir         = ".terraform-serverless"
 
-  # The directory where your `serverless` binary lives. Defaults to the `node_modules/.bin` in your `config_dir`.
+  # The directory to look for the `serverless` binary. Otherwise uses the binary in your current $PATH
   serverless_bin_dir = abspath("example/node_modules/.bin")
 }
 ```
