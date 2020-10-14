@@ -1,7 +1,5 @@
 Terraform Provider for Serverless
 =================================
-[![Build Status](https://travis-ci.com/FormidableLabs/terraform-provider-serverless.svg?branch=master)](https://travis-ci.com/FormidableLabs/terraform-provider-serverless)
-
 Integrate Serverless into your Terraform dependency graph!
 
 ## Why?
@@ -36,6 +34,12 @@ resource "serverless_deployment" "example" {
 
   # The directory to look for the `serverless` binary. Otherwise uses the binary in your current $PATH
   serverless_bin_dir = abspath("example/node_modules/.bin")
+
+  # All environment variables are exposed to serverless and can be used in `serverless.yml`
+  env = {
+    "AWS_REGION": data.aws_region.current.name,
+    "FOO": "BAR",
+  }
 }
 ```
 
