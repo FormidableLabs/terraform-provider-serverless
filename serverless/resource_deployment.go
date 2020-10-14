@@ -30,9 +30,11 @@ func resourceDeployment() *schema.Resource {
 				Default:  "",
 			},
 			// The directory where the Serverless package lives. In the CLI, this defaults to
-			// .serverless, but we default to .terraform-serverless to avoid an issue where
-			// the CLI deletes the .serverless directory after deploy, even with --package.
-			// Note that the provider requires out-of-band packaging. Users should package
+			// .serverless, but this can be overriden (for example to .terraform-serverless
+			// to avoid an issue where the CLI deletes the .serverless directory after deploy,
+			// even with --package.)
+			// Note that the provider requires out-of-band packaging.
+			// So in case a custom package_dir is given, users should package
 			// their code with `sls package --package .terraform-serverless`.
 			//
 			// NOTE: the path you provide must be RELATIVE to your `config_dir` since the
@@ -40,7 +42,7 @@ func resourceDeployment() *schema.Resource {
 			"package_dir": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
-				Default:  ".terraform-serverless",
+				Default:  "",
 			},
 			"stage": &schema.Schema{
 				Type:     schema.TypeString,

@@ -65,7 +65,7 @@ func (s Serverless) exec(command int) error {
 		s.stage,
 	}
 
-	if command == deploy || command == pkg {
+	if s.packageDir != "" && (command == deploy || command == pkg) {
 		args = append(args, "-p", s.packageDir)
 	}
 
@@ -111,22 +111,29 @@ func (s *Serverless) Hash() (changed bool, err error) {
 		return false, errors.New("service name was not found in serverless config")
 	}
 
-	zipPath := filepath.Join(s.configDir, s.packageDir, fmt.Sprintf("%s.zip", serviceName))
-
 	configJSON, err := json.Marshal(s.config)
-
-	if err != nil {
-		return changed, err
-	}
-
-	zipHash, err := dirhash.HashZip(zipPath, dirhash.Hash1)
-
 	if err != nil {
 		return changed, err
 	}
 
 	configHashBytes := sha256.Sum256(configJSON)
 	configHash := hex.EncodeToString(configHashBytes[:])
+	var zipHash string
+
+	var packageObj map[string]interface{}
+	if s.config["package"] != nil {
+		packageObj = s.config["package"].(map[string]interface{})
+	}
+
+	if packageObj == nil || packageObj["artifact"] == nil {
+		// Not using a predefined artifact, will check the (pre-built) zip file
+		zipPath := filepath.Join(s.configDir, s.packageDir, fmt.Sprintf("%s.zip", serviceName))
+		zipHash, err = dirhash.HashZip(zipPath, dirhash.Hash1)
+
+	if err != nil {
+		return changed, err
+	}
+	}
 
 	hash := fmt.Sprintf("%s-%s", zipHash, configHash)
 
