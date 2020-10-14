@@ -172,22 +172,13 @@ func NewServerless(resource getter) (*Serverless, error) {
 }
 
 func buildBinPath(configDir, binDir string) string {
-	var binPath string
 	var suffix string
-
-	if binDir == "" {
-		binPath = filepath.Join(configDir, "node_modules", ".bin")
-	} else {
-		binPath = binDir
-	}
-
+	
 	if runtime.GOOS == "windows" {
 		suffix = ".cmd"
 	}
 
-	binPath = filepath.Join(binPath, fmt.Sprintf("serverless%s", suffix))
-
-	return binPath
+	return filepath.Join(binDir, fmt.Sprintf("serverless%s", suffix))
 }
 
 func getCmdString(cmd int) string {
