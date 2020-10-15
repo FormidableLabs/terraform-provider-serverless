@@ -1,5 +1,5 @@
-Terraform Provider for Serverless
-=================================
+# Terraform Provider for Serverless
+
 Deploy and manage your serverless stack with Terraform.
 
 **This is a fork** from the great work delivered by [FormidableLabs](https://github.com/FormidableLabs/terraform-provider-serverless).  
