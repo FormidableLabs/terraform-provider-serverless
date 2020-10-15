@@ -1,6 +1,12 @@
 Terraform Provider for Serverless
 =================================
-Integrate Serverless into your Terraform dependency graph!
+Deploy and manage your serverless stack with Terraform.
+
+**This is a fork** from the great work delivered by [FormidableLabs](https://github.com/FormidableLabs/terraform-provider-serverless).  
+It adds:
+
+- Extra functionality (see [Changelog](./CHANGELOG.md))
+- Publish to Terraform registry for easier integration into our projects
 
 ## Why?
 
