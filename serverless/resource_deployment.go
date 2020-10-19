@@ -67,6 +67,27 @@ func resourceDeployment() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+			"aws_config": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"account_id": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"caller_arn": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"caller_user": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+					},
+				},
+			},
 		},
 
 		// Only trigger a deploy if either the Serverless config or Serverless zip archive has changed.
@@ -121,7 +142,13 @@ func resourceDeploymentRead(d *schema.ResourceData, m interface{}) error {
 	stage := d.Get("stage").(string)
 
 	sess := session.Must(session.NewSession())
-	cf := cloudformation.New(sess)
+	creds, awsErr := loadAWSCredentials(d)
+	if awsErr != nil {
+		return awsErr
+	}
+
+	cf := cloudformation.New(sess, &aws.Config{Credentials: creds})
+
 	_, err := cf.DescribeStacks(&cloudformation.DescribeStacksInput{
 		StackName: aws.String(strings.Join([]string{id, stage}, "-")),
 	})
@@ -129,7 +156,7 @@ func resourceDeploymentRead(d *schema.ResourceData, m interface{}) error {
 		if aerr, ok := err.(awserr.Error); ok {
 			if aerr.Code() == "ValidationError" && strings.Contains(aerr.Message(), "does not exist") {
 				d.SetId("")
-				return nil
+				return err
 			}
 		}
 		return err

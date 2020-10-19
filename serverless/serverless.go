@@ -10,7 +10,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"golang.org/x/mod/sumdb/dirhash"
 )
 
@@ -178,6 +180,14 @@ func NewServerless(resource getter) (*Serverless, error) {
 		args:       args,
 	}
 
+	if awsCreds, err := loadAWSCredentials(resource); err != nil {
+		return nil, err
+	} else if awsCreds != nil {
+		if err := updateEnvWithCredentials(s, awsCreds); err != nil {
+			return nil, err
+		}
+	}
+
 	if err := s.loadServerlessConfig(); err != nil {
 		return nil, err
 	}
@@ -187,6 +197,36 @@ func NewServerless(resource getter) (*Serverless, error) {
 	}
 
 	return s, nil
+}
+
+func updateEnvWithCredentials(s *Serverless, creds *credentials.Credentials) error {
+	// Read credentials and populate env value so that
+	// serverless uses the correct credentials
+	credValue, err := creds.Get()
+	if err != nil {
+		return fmt.Errorf("Failed retreiving Assume role credentials:\n%w", err)
+	}
+
+	newEnv := []string{
+		fmt.Sprintf("AWS_ACCESS_KEY_ID=%s", credValue.AccessKeyID),
+		fmt.Sprintf("AWS_SECRET_ACCESS_KEY=%s", credValue.SecretAccessKey),
+		fmt.Sprintf("AWS_SESSION_TOKEN=%s", credValue.SessionToken),
+	}
+
+	for _, env := range s.env {
+		envPair := strings.SplitN(env, "=", 2)
+		key := envPair[0]
+		value := envPair[1]
+
+		if key == "AWS_ACCESS_KEY_ID" || key == "AWS_SECRET_ACCESS_KEY" || key == "AWS_SESSION_TOKEN" {
+			continue
+		}
+
+		newEnv = append(newEnv, fmt.Sprintf("%s=%s", key, value))
+	}
+
+	s.env = newEnv
+	return nil
 }
 
 func buildBinPath(configDir, binDir string) string {
