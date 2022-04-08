@@ -1,6 +1,7 @@
 Terraform Provider for Serverless
 =================================
 [![Build Status](https://travis-ci.com/FormidableLabs/terraform-provider-serverless.svg?branch=master)](https://travis-ci.com/FormidableLabs/terraform-provider-serverless)
+[![Maintenance Status][maintenance-image]](#maintenance-status)
 
 Integrate Serverless into your Terraform dependency graph!
 
@@ -46,3 +47,5 @@ See our contribution guidelines [here!](CONTRIBUTING.md)
 ## Maintenance Status
 
 **Experimental:** This project is quite new. We're not sure what our ongoing maintenance plan for this project will be. Bug reports, feature requests and pull requests are welcome. If you like this project, let us know!
+
+[maintenance-image]: https://img.shields.io/badge/Maintenance-experimental-blueviolet
