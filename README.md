@@ -1,4 +1,4 @@
-[![Terraform Provider for Serverless — Formidable, We build the modern web](./terraform-provider-serverless-Hero.png)](https://formidable.com/open-source/)
+[![Terraform Provider for Serverless — Formidable, We build the modern web](https://raw.githubusercontent.com/FormidableLabs/terraform-provider-serverless/master/terraform-provider-serverless-Hero.png)](https://formidable.com/open-source/)
 
 [![Build Status](https://travis-ci.com/FormidableLabs/terraform-provider-serverless.svg?branch=master)](https://travis-ci.com/FormidableLabs/terraform-provider-serverless)
 [![Maintenance Status][maintenance-image]](#maintenance-status)
